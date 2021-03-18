@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    pod-restarter.openshift.io: ""
+  name: pod-restarter
+  namespace: openshift-pod-restarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod-restarter.openshift.io: ""
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        pod-restarter.openshift.io: ""
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: machineremediation.kubevirt.io
+                      operator: In
+                      values:
+                        - pod-restarter
+                topologyKey: kubernetes.io/hostname
+              weight: 50
+      containers:
+        - args:
+            - --logtostderr=true
+          command:
+            - /usr/local/bin/pod-restarter
+          image: quay.io/alukiano/pod-restarter:4.8-snapshot
+          imagePullPolicy: Always
+          name: pod-restarter
+          resources:
+            requests:
+              cpu: 10m
+              memory: 20Mi
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: openshift-pod-restarter
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/not-ready
+          operator: Exists
+          tolerationSeconds: 120
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+          tolerationSeconds: 120

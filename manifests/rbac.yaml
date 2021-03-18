@@ -1,0 +1,56 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    pod-restarter.openshift.io: ""
+  name: openshift-pod-restarter
+  namespace: openshift-pod-restarter
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    pod-restarter.openshift.io: ""
+  name: openshift-pod-restarter
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - pods
+    verbs:
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - list
+      - watch
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    pod-restarter.openshift.io: ""
+  name: openshift-pod-restarter
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: openshift-pod-restarter
+subjects:
+  - kind: ServiceAccount
+    name: openshift-pod-restarter
+    namespace: openshift-pod-restarter
